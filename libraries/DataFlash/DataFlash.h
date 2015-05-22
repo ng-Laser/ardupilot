@@ -81,6 +81,7 @@ public:
     void Log_Write_Message(const char *message);
     void Log_Write_Message_P(const prog_char_t *message);
     void Log_Write_Camera(const AP_AHRS &ahrs, const AP_GPS &gps, const Location &current_loc);
+    void Log_Write_Mount(uint8_t instance, const Location &roiLoc, Vector3f roiVel, Vector3f mountAngles, uint8_t mode);
     void Log_Write_ESC(void);
     void Log_Write_Airspeed(AP_Airspeed &airspeed);
     void Log_Write_Attitude(AP_AHRS &ahrs, const Vector3f &targets);
@@ -572,6 +573,20 @@ struct PACKED log_GYRO {
     float GyrX, GyrY, GyrZ;
 };
 
+struct PACKED log_Mount{
+    LOG_PACKET_HEADER;
+    uint32_t time_ms;
+    uint8_t instance;
+    int32_t lat_roi; 
+    int32_t lng_roi;
+    int32_t alt_roi;
+    float roi_vel_N, roi_vel_E, roi_vel_D;
+    float roll;
+    float pitch;
+    float yaw;
+    uint8_t mode;
+};
+
 /*
 Format characters in the format string for binary log messages
   b   : int8_t
@@ -630,7 +645,17 @@ Format characters in the format string for binary log messages
     { LOG_COMPASS_MSG, sizeof(log_Compass), \
       "MAG", "QhhhhhhhhhB",    "TimeUS,MagX,MagY,MagZ,OfsX,OfsY,OfsZ,MOfsX,MOfsY,MOfsZ,Health" }, \
     { LOG_MODE_MSG, sizeof(log_Mode), \
-      "MODE", "QMB",         "TimeUS,Mode,ModeNum" }
+      "MODE", "QMB",         "TimeUS,Mode,ModeNum" }, \
+    { LOG_PIDR_MSG, sizeof(log_PID), \
+      "PIDR", "Qffffff",  "TimeUS,Des,P,I,D,FF,AFF" }, \
+    { LOG_PIDP_MSG, sizeof(log_PID), \
+      "PIDP", "Qffffff",  "TimeUS,Des,P,I,D,FF,AFF" }, \
+    { LOG_PIDY_MSG, sizeof(log_PID), \
+      "PIDY", "Qffffff",  "TimeUS,Des,P,I,D,FF,AFF" }, \
+    { LOG_PIDA_MSG, sizeof(log_PID), \
+      "PIDA", "Qffffff",  "TimeUS,Des,P,I,D,FF,AFF" }, \
+    { LOG_MOUNT_MSG, sizeof(log_Mount), \
+     "MNT", "IBLLiffffffM", "TimeMS,instnc,Lat,Lng,Alt,VelN,VelE,VelD,Roll,Pitch,Yaw,MavMode" }
 
 // messages for more advanced boards
 #define LOG_EXTRA_STRUCTURES \
@@ -773,6 +798,7 @@ Format characters in the format string for binary log messages
 #define LOG_PIDP_MSG      180
 #define LOG_PIDY_MSG      181
 #define LOG_PIDA_MSG      182
+#define LOG_MOUNT_MSG     183
 
 // message types 200 to 210 reversed for GPS driver use
 // message types 211 to 220 reversed for autotune use

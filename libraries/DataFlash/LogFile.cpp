@@ -1154,6 +1154,26 @@ void DataFlash_Class::Log_Write_Camera(const AP_AHRS &ahrs, const AP_GPS &gps, c
     };
     WriteBlock(&pkt, sizeof(pkt));
 }
+//write a Mount packet
+void DataFlash_Class::Log_Write_Mount(uint8_t instance, const Location &roiLoc, Vector3f roiVel, Vector3f mountAngles, uint8_t mode)
+{
+   struct log_Mount pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_MOUNT_MSG),
+        time_ms   : hal.scheduler->millis(),
+        instance  : instance,
+        lat_roi   : roiLoc.lat,
+        lng_roi   : roiLoc.lng,
+        alt_roi   : roiLoc.alt,
+        roi_vel_N : roiVel[0], 
+        roi_vel_E : roiVel[1], 
+        roi_vel_D : roiVel[2], 
+        roll      : mountAngles[0],
+        pitch     : mountAngles[1],
+        yaw       : mountAngles[2],
+        mode      : mode
+   };
+   WriteBlock(&pkt, sizeof(pkt));
+}
 
 // Write an attitude packet
 void DataFlash_Class::Log_Write_Attitude(AP_AHRS &ahrs, const Vector3f &targets)
