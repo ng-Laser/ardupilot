@@ -25,8 +25,8 @@
 #include <AP_Common.h>
 #include <AP_Mount.h>
 
-#include <DataFlash.h>
 #define ROISPEED_MAX_PROPAGATION_TIME 60000 //1 min in ms, maximum single interval we will propagate ROI point.
+
 class AP_Mount_Backend
 {
 public:
@@ -51,6 +51,9 @@ public:
 
     // set_mode - sets mount's mode
     virtual void set_mode(enum MAV_MOUNT_MODE mode) = 0;
+
+    virtual void logDataFlash() = 0;
+    
 
     // set_angle_targets - sets angle targets in degrees
     virtual void set_angle_targets(float roll, float tilt, float pan);

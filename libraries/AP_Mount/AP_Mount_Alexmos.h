@@ -104,6 +104,11 @@ public:
     // status_msg - called to allow mounts to send their status to GCS via MAVLink
     virtual void status_msg(mavlink_channel_t chan) ;
 
+
+
+
+    virtual void logDataFlash(){}
+
 private:
 
     // get_angles -

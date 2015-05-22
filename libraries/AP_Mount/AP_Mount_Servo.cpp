@@ -1,7 +1,7 @@
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 #include <AP_Mount_Servo.h>
-
+#include <DataFlash.h>
 extern const AP_HAL::HAL& hal;
 
 // init - performs any required initialisation for this instance
@@ -203,3 +203,9 @@ void AP_Mount_Servo::move_servo(uint8_t function_idx, int16_t angle, int16_t ang
 	int16_t servo_out = closest_limit(angle, angle_min, angle_max);
 	RC_Channel_aux::move_servo((RC_Channel_aux::Aux_servo_function_t)function_idx, servo_out, angle_min, angle_max);
 }
+
+void AP_Mount_Servo::logDataFlash()
+{
+    _frontend._DataFlash->Log_Write_Mount(_instance, _state._roi_target , _state._roi_target_velocity ,_angle_bf_output_deg, get_mode());
+}
+

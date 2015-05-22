@@ -42,6 +42,8 @@ class AP_Mount_Alexmos;
 class AP_Mount_SToRM32;
 class AP_Mount_SToRM32_serial;
 
+//declare dataFlash class for logging out information
+class DataFlash_Class;
 /*
   This is a workaround to allow the MAVLink backend access to the
   SmallEKF. It would be nice to find a neater solution to this
@@ -80,7 +82,7 @@ public:
     AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc);
 
     // init - detect and initialise all mounts
-    void init(const AP_SerialManager& serial_manager);
+    void init(DataFlash_Class *dataflash, const AP_SerialManager& serial_manager);
 
     // update - give mount opportunity to update servos.  should be called at 10hz or higher
     void update();
@@ -142,8 +144,15 @@ public:
     // parameter var table
     static const struct AP_Param::GroupInfo        var_info[];
 
-protected:
+    //writing in log file
+    //Note: these aren't used in the update function, for client use
+    void logDataFlash(){logDataFlash(_primary);}
+    void logDataFlash(uint8_t instance);
 
+    // dataflash for logging, if available
+    DataFlash_Class *_DataFlash;
+
+protected:
     // private members
     const AP_AHRS_TYPE     &_ahrs;
     const struct Location   &_current_loc;  // reference to the vehicle's current location
@@ -201,6 +210,10 @@ protected:
         uint32_t _last_roi_updateTime;
 
     } state[AP_MOUNT_MAX_INSTANCES];
+    
+    //pulled out of state because all states get updated at same time
+    uint32_t _last_mount_updateTime;
+
 };
 
 #endif // __AP_MOUNT_H__

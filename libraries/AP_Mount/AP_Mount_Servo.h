@@ -47,7 +47,8 @@ public:
 
     // status_msg - called to allow mounts to send their status to GCS using the MOUNT_STATUS message
     virtual void status_msg(mavlink_channel_t chan);
-
+    
+    virtual void logDataFlash();
 private:
 
     // flags structure

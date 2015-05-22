@@ -11,6 +11,8 @@
 #include <AP_Mount_SToRM32.h>
 #include <AP_Mount_SToRM32_serial.h>
 
+#define UPDATE_LOG_FILE_T 200 //5 hz logging rate
+
 const AP_Param::GroupInfo AP_Mount::var_info[] PROGMEM = {
     // @Param: _DEFLT_MODE
     // @DisplayName: Mount default operating mode
@@ -476,7 +478,7 @@ AP_Mount::AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc)
 }
 
 // init - detect and initialise all mounts
-void AP_Mount::init(const AP_SerialManager& serial_manager)
+void AP_Mount::init( DataFlash_Class *dataflash, const AP_SerialManager& serial_manager)
 {
     // check init has not been called before
     if (_num_instances != 0) {
@@ -527,6 +529,8 @@ void AP_Mount::init(const AP_SerialManager& serial_manager)
             }
         }
     }
+     _DataFlash = dataflash; 
+    _last_mount_updateTime = 0 ;
 }
 
 // update - give mount opportunity to update servos.  should be called at 10hz or higher
@@ -541,6 +545,18 @@ void AP_Mount::update()
             }
         }
     }
+
+    //start logging mount state
+    uint32_t timeElapsedMS = hal.scheduler->millis() - _last_mount_updateTime ; 
+    if (timeElapsedMS > UPDATE_LOG_FILE_T) {
+        for (uint8_t instance = 0; instance < AP_MOUNT_MAX_INSTANCES; instance++) {
+            if (_backends[instance] != NULL) {
+                _backends[instance]->logDataFlash();
+            }
+        }
+        _last_mount_updateTime = hal.scheduler->millis();
+    }
+    //end logging mount state
 }
 
 // get_mount_type - returns the type of mount
@@ -671,4 +687,11 @@ void AP_Mount::send_gimbal_report(mavlink_channel_t chan)
             _backends[instance]->send_gimbal_report(chan);
         }
     }    
+}
+
+void AP_Mount::logDataFlash(uint8_t instance)
+{
+    if (instance < AP_MOUNT_MAX_INSTANCES && _backends[instance] != NULL) {
+        _backends[instance]->logDataFlash();
+    }
 }
