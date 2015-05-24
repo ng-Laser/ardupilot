@@ -1098,6 +1098,41 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         break;
     }
 
+    case MAVLINK_MSG_ID_COMMAND_INT:
+    {
+
+        // decode packet
+        mavlink_command_int_t packet;
+        mavlink_msg_command_int_decode(msg, &packet);
+
+        switch(packet.command){
+            case MAV_CMD_DO_SET_ROI:
+            // param1 : north velocity vec component [m/s]
+            // param2 : east  velocity vec component [m/s] 
+            // param3 : down  velocity vec component [m/s]
+            // param5 : x / lat
+            // param6 : y / lon
+            // param7 : z / alt
+
+            Vector3f roi_vel;
+            roi_vel.x = (packet.param1);
+            roi_vel.y = (packet.param2);
+            roi_vel.z = (packet.param3);
+
+            Location roi_loc;
+            roi_loc.lat = packet.x;
+            roi_loc.lng = packet.y;
+            roi_loc.alt = (int32_t)(packet.z * 100.0f);
+
+            set_auto_yaw_roiVel(roi_loc, roi_vel);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+        }
+
+        break;
+    }
+
     // Pre-Flight calibration requests
     case MAVLINK_MSG_ID_COMMAND_LONG:       // MAV ID: 76
     {
