@@ -16,14 +16,21 @@ void AP_Mount_Backend::set_angle_targets(float roll, float tilt, float pan)
     _frontend.set_mode(_instance, MAV_MOUNT_MODE_MAVLINK_TARGETING);
 }
 
-// set_roi_target - sets target location that mount should attempt to point towards
-void AP_Mount_Backend::set_roi_target(const struct Location &target_loc)
+// set_roi_target - sets target location that mount should attempt to point towards and potentialy the velocity in m/s with which the ROI point moves 
+void AP_Mount_Backend::set_roi_target(const struct Location &target_loc , const Vector3f roiVelocity)
 {
     // set the target gps location
     _state._roi_target = target_loc;
-
+    //speed mount should progress in [m/s] with NorthEastDown vector
+    _state._roi_target_velocity = roiVelocity;
+    _state._last_roi_updateTime = 0;
     // set the mode to GPS tracking mode
     _frontend.set_mode(_instance, MAV_MOUNT_MODE_GPS_POINT);
+}
+
+struct Location AP_Mount_Backend::get_roi_target()
+{
+    return _state._roi_target;
 }
 
 // configure_msg - process MOUNT_CONFIGURE messages received from GCS
@@ -152,4 +159,22 @@ void AP_Mount_Backend::calc_angle_to_location(const struct Location &target, Vec
         // calc absolute heading and then onvert to vehicle relative yaw
         angles_to_target_rad.z = wrap_PI(atan2f(GPS_vector_x, GPS_vector_y) - _frontend._ahrs.yaw);
     }
+}
+
+void AP_Mount_Backend::update_roi_target() 
+{
+    if(_state._last_roi_updateTime != 0 && 
+        (_state._roi_target_velocity[0] != 0 || _state._roi_target_velocity[1] !=0 ||_state._roi_target_velocity[2] != 0 )) {
+        //make sure there is a velocity, faster than magnitude
+        uint32_t timeElapsedMS = hal.scheduler->millis() - _state._last_roi_updateTime; 
+        if (timeElapsedMS < ROISPEED_MAX_PROPAGATION_TIME) {
+            float ofs_alt  = -100*(timeElapsedMS/1000.0) * _state._roi_target_velocity[2];
+            float ofs_nrth = (timeElapsedMS/1000.0) * _state._roi_target_velocity[0];
+            float ofs_east = (timeElapsedMS/1000.0) * _state._roi_target_velocity[1];
+
+            _state._roi_target.alt += ofs_alt;
+            location_offset(_state._roi_target, ofs_nrth, ofs_east);
+        }
+    }
+    _state._last_roi_updateTime = hal.scheduler->millis();
 }

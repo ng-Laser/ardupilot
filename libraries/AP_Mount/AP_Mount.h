@@ -23,6 +23,7 @@
 #define __AP_MOUNT_H__
 
 #include <AP_Math.h>
+#include <vector3.h>
 #include <AP_Common.h>
 #include <AP_GPS.h>
 #include <AP_AHRS.h>
@@ -110,10 +111,17 @@ public:
     void set_angle_targets(float roll, float tilt, float pan) { set_angle_targets(_primary, roll, tilt, pan); }
     void set_angle_targets(uint8_t instance, float roll, float tilt, float pan);
 
-    // set_roi_target - sets target location that mount should attempt to point towards
-    void set_roi_target(const struct Location &target_loc) { set_roi_target(_primary,target_loc); }
-    void set_roi_target(uint8_t instance, const struct Location &target_loc);
-
+    // set_roi_target - sets target location that mount should attempt to point towards   ; Vector3f defaults to 0
+    // the last parameter in the set_roi_target is a 3d vector indicating a velocity in north-east-down meters per second.
+    // The specified roi_target is simulated to have this velocity. Whenver update is called, the roi point moves in a straight line at this speed, 
+    // providing: 1) roiSpeed is not zero, 2) the mount is in MODE_GPS_POINT and 3) no more than 1 minute has passed since the last time the mount was in MODE_GPS_POINT with the current parameters
+    void set_roi_target(const struct Location &target_loc, Vector3f roi_target_velocity = Vector3f()) { set_roi_target(_primary,target_loc, roi_target_velocity); }
+    void set_roi_target(uint8_t instance, const struct Location &target_loc, Vector3f roi_target_velocity = Vector3f());
+    
+    //will be useful in updating yaw of quad
+    struct Location get_roi_target(){ return get_roi_target(_primary);}
+    struct Location get_roi_target(uint8_t instance);
+    
     // configure_msg - process MOUNT_CONFIGURE messages received from GCS
     void configure_msg(mavlink_message_t* msg) { configure_msg(_primary, msg); }
     void configure_msg(uint8_t instance, mavlink_message_t* msg);
@@ -178,9 +186,20 @@ protected:
 
         MAV_MOUNT_MODE  _mode;              // current mode (see MAV_MOUNT_MODE enum)
         struct Location _roi_target;        // roi target location
-
         struct gimbal_params _gimbalParams;
         
+        //3d vector indicating a velocity in north-east-down meters per second. 
+        //The specified roi_target is simulated to have this velocity. 
+        //Whenver update is called, the roi point moves in a straight line at this speed, providing: 
+        //  1) roiSpeed is not zero, 
+        //  2) the mount is in MODE_GPS_POINT and 
+        //  3) no more than 1 minute has passed since the last time the mount was in MODE_GPS_POINT with the current parameters
+        // Vector.x = North [m/s] Vector.y = East [m/w] Vector.z = down [m/s]
+        Vector3f _roi_target_velocity;
+        
+        //used to determine by how much to move ROI point to track velocity
+        uint32_t _last_roi_updateTime;
+
     } state[AP_MOUNT_MAX_INSTANCES];
 };
 
